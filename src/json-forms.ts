@@ -13,9 +13,10 @@ import {
   ValidationMode,
   configReducer,
   coreReducer,
+  createAjv,
   i18nReducer,
 } from '@jsonforms/core';
-import Ajv, { ErrorObject } from 'ajv';
+import Ajv, { ErrorObject, Options } from 'ajv';
 import { 
   ChangeEventArgs,
   EventHandler,
@@ -86,7 +87,7 @@ export class JsonForms
   #validationMode: ValidationMode = null!; // todo: proper null values (or not) handling
   #ajv: Ajv = null!; // todo: proper null values (or not) handling
   #config: any;
-  #i18n: JsonFormsI18nState = null!; // todo: proper null values (or not) handling
+  #i18n: JsonFormsI18nState | undefined;
   #additionalErrors: ErrorObject[] = null!; // todo: proper null values (or not) handling
   onChange: EventHandler<ChangeEventArgs> = noop;
 
@@ -97,6 +98,11 @@ export class JsonForms
     this.cells = [];
     this.readonly = false;
     this.uischemas = [];
+    const options: Options = {
+      schemaId: 'id',
+      allErrors: true
+    };
+    this.ajv = createAjv(options);
   }
 
   get data(): any {
@@ -227,10 +233,10 @@ export class JsonForms
     this.#refresh();
   }
 
-  get i18n(): JsonFormsI18nState {
+  get i18n(): JsonFormsI18nState | undefined {
     return this.#i18n;
   }
-  set i18n(i18n: JsonFormsI18nState) {
+  set i18n(i18n: JsonFormsI18nState | undefined) {
     if (!i18n || this.#i18n === i18n) {
       return;
     }
@@ -360,6 +366,9 @@ export class JsonForms
     if (this.#uischemas !== this.#jsonforms.uischemas) {
       this.#jsonforms.uischemas = this.#uischemas;
     }
+    const data = this.#data;
+    const schema = this.#schema ?? Generate.jsonSchema(isObject(data) ? data : {});
+    const uischema = this.#uischema ?? Generate.uiSchema(schema);
     const initActionOptions: InitActionOptions = {
       ajv: this.#ajv,
       validationMode: this.#validationMode,
@@ -367,7 +376,7 @@ export class JsonForms
     };
     this.#jsonforms.core = coreReducer(
       this.#jsonforms.core,
-      Actions.updateCore(this.#data, this.#schema, this.#uischema, initActionOptions)
+      Actions.updateCore(data, schema, uischema, initActionOptions)
     );
     this.#root.innerHTML = '';
     const dispatchRendererElement = document.createElement(JsonFormsDispatchRenderer.tag) as JsonFormsDispatchRenderer;

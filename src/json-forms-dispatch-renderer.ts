@@ -17,13 +17,13 @@ import {
 import { JsonFormsUnknownRenderer } from "./json-forms-unknown-renderer";
 
 
-const areEqual = (prevProps: StatePropsOfJsonFormsRenderer, nextProps: StatePropsOfJsonFormsRenderer) => {
-  return prevProps.renderers?.length === nextProps.renderers?.length
-    && prevProps.cells?.length === nextProps.cells?.length
-    && prevProps.uischemas?.length === nextProps.uischemas?.length
-    && prevProps.schema === nextProps.schema
-    && isEqual(prevProps.uischema, nextProps.uischema)
-    && prevProps.path === nextProps.path;
+const areEqual = (prevProps: StatePropsOfJsonFormsRenderer | null | undefined, nextProps: StatePropsOfJsonFormsRenderer | null | undefined) => {
+  return prevProps?.renderers?.length === nextProps?.renderers?.length
+    && prevProps?.cells?.length === nextProps?.cells?.length
+    && prevProps?.uischemas?.length === nextProps?.uischemas?.length
+    && prevProps?.schema === nextProps?.schema
+    && isEqual(prevProps?.uischema, nextProps?.uischema)
+    && prevProps?.path === nextProps?.path;
 };
 
 const jsonFormsTag = 'json-forms-dispatch-renderer';
@@ -147,14 +147,14 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
         cells: this.#cells
       }
     );
-    if (areEqual(rendererProperties, this.#rendererProperties)) {
+    if (areEqual(this.#rendererProperties, rendererProperties)) {
       return;
     }
     this.#rendererProperties = rendererProperties;
     const { renderers } = rendererProperties;
-    if (!renderers?.length) {
-      throw 'Renderers are required';
-    }
+    // if (!renderers?.length) {
+    //   throw 'Renderers are required';
+    // }
     const schema = this.#schema || rendererProperties.schema;
     if (!schema) {
       throw 'Schema is required';
@@ -167,9 +167,9 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
       rootSchema: rendererProperties.rootSchema,
       config: getConfig(state)
     };
-    const rendererEntry = maxBy(renderers, renderer => renderer.tester(uischema, schema, testerContext));
+    const rendererEntry = maxBy(renderers??[], renderer => renderer.tester(uischema, schema, testerContext));
     let componentRenderer = JsonFormsUnknownRenderer;
-    if (rendererEntry.tester(uischema, schema, testerContext) !== -1) {
+    if (!!rendererEntry && rendererEntry.tester(uischema, schema, testerContext) !== -1) {
       componentRenderer = rendererEntry.renderer;
     }
     this.#root.innerHTML = '';
