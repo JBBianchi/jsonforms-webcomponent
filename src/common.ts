@@ -1,4 +1,4 @@
-import { ErrorObject } from "ajv";
+import { ErrorObject } from 'ajv';
 
 export interface IWebComponent {
   connectedCallback(): void;
@@ -30,7 +30,6 @@ export interface ChangeEventArgs {
   errors: ErrorObject[] | undefined
 }
 
-
 export type KeyOfComponent<TComponent> = keyof Omit<TComponent, keyof HTMLElement>;
 
 export const maxBy = <T>(arr: T[], func: (value: T) => number): T => {
@@ -43,6 +42,8 @@ export const maxBy = <T>(arr: T[], func: (value: T) => number): T => {
     return prevScore >= nextScore ? prev: next;
   }, undefined as any);
 };
+
+export const shadowRootMode: ShadowRootMode = process.env.NODE_ENV === 'development' ? 'open' : 'closed';
 
 
 /**

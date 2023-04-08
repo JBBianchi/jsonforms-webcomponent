@@ -1,6 +1,4 @@
 import {
-  JsonFormsCellRendererRegistryEntry,
-  JsonFormsRendererRegistryEntry,
   JsonFormsSubStates,
   JsonSchema,
   StatePropsOfJsonFormsRenderer,
@@ -10,11 +8,11 @@ import {
   isControl,
   mapStateToJsonFormsRendererProps,
   removeId
-} from "@jsonforms/core";
+} from '@jsonforms/core';
 import {
-  IWebComponent, KeyOfComponent, camelCase, debounce, isEqual, maxBy
-} from "./common";
-import { JsonFormsUnknownRenderer } from "./json-forms-unknown-renderer";
+  IWebComponent, KeyOfComponent, camelCase, debounce, isEqual, maxBy, shadowRootMode
+} from './common';
+import { JsonFormsUnknownRenderer } from './json-forms-unknown-renderer';
 
 
 const areEqual = (prevProps: StatePropsOfJsonFormsRenderer | null | undefined, nextProps: StatePropsOfJsonFormsRenderer | null | undefined) => {
@@ -42,36 +40,36 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
 
   static get observedAttributes(): Array<string> {
     return [
-      "jsonforms",
-      "schema",
-      "root-schema",
-      "uischema",
-      "path",
-      "enabled",
-      "visible",
-      "renderers",
-      "cells",
-      "config",
+      'jsonforms',
+      'schema',
+      //'root-schema',
+      'uischema',
+      'path',
+      'enabled',
+      //'visible',
+      //'renderers',
+      //'cells',
+      //'config',
     ]
   }
 
+  protected root: ShadowRoot;
   #jsonforms: JsonFormsSubStates = null!; // todo: proper null values (or not) handling
-  #root: ShadowRoot;
-  #id: string = null!; // todo: proper null values (or not) handling
   #rendererProperties: StatePropsOfJsonFormsRenderer = null!; // todo: proper null values (or not) handling
+  #id: string = null!; // todo: proper null values (or not) handling
   #schema: JsonSchema = null!; // todo: proper null values (or not) handling
   //#rootSchema: JsonSchema = null!; // todo: proper null values (or not) handling
   #uischema: TUISchemaElement = null!; // todo: proper null values (or not) handling
   #path: string = null!; // todo: proper null values (or not) handling
   #enabled: boolean = null!; // todo: proper null values (or not) handling
   //#visible: boolean = null!; // todo: proper null values (or not) handling
-  #renderers: JsonFormsRendererRegistryEntry[] = null!; // todo: proper null values (or not) handling
-  #cells: JsonFormsCellRendererRegistryEntry[] = null!; // todo: proper null values (or not) handling
+  //#renderers: JsonFormsRendererRegistryEntry[] = null!; // todo: proper null values (or not) handling
+  //#cells: JsonFormsCellRendererRegistryEntry[] = null!; // todo: proper null values (or not) handling
   //#config: any = null!; // todo: proper null values (or not) handling
 
   constructor() {
     super();
-    this.#root = this.attachShadow({ mode: 'closed' }); // keeps track of the shadowRoot even if its closed
+    this.root = this.attachShadow({ mode: shadowRootMode }); // keeps track of the shadowRoot even if its closed
   }
 
   get jsonforms(): JsonFormsSubStates {
@@ -86,7 +84,7 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
   }
   set schema(schema: JsonSchema) {
     this.#schema = schema;
-    this.#refresh();
+    this.refresh();
   }
 
   get uischema(): TUISchemaElement {
@@ -94,7 +92,7 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
   }
   set uischema(uischema: TUISchemaElement) {
     this.#uischema = uischema;
-    this.#refresh();
+    this.refresh();
   }
 
   get path(): string {
@@ -102,7 +100,15 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
   }
   set path(path: string) {
     this.#path = path;
-    this.#refresh();
+    this.refresh();
+  }
+
+  get enabled(): boolean {
+    return this.#enabled;
+  }
+  set enabled(enabled: boolean) {
+    this.#enabled = enabled;
+    this.refresh();
   }
 
   attributeChangedCallback(attribute: string, previousValue: unknown, currentValue: unknown): void {
@@ -117,13 +123,13 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
   }
 
   connectedCallback(): void {
-    if (!this.#root.isConnected) {
+    if (!this.root.isConnected) {
       return;
     }
     if (isControl(this.#uischema)) {
       this.#id = createId(this.#uischema.scope);
     }
-    this.#refresh();
+    this.refresh();
   }
 
   disconnectedCallback(): void {
@@ -134,8 +140,11 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
 
   adoptedCallback(): void {}
 
-  #_refresh() {
-    const state = { jsonforms: this.#jsonforms};
+  protected _refresh() {
+    if (!this.jsonforms) {
+      throw 'The component needs an instance of JsonForms';
+    }
+    const state = { jsonforms: this.jsonforms};
     const rendererProperties = mapStateToJsonFormsRendererProps(
       state, 
       {
@@ -143,8 +152,8 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
         uischema: this.#uischema,
         path: this.#path,
         enabled: this.#enabled,
-        renderers: this.#renderers,
-        cells: this.#cells
+        //renderers: this.#renderers,
+        //cells: this.#cells
       }
     );
     if (areEqual(this.#rendererProperties, rendererProperties)) {
@@ -172,7 +181,7 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
     if (!!rendererEntry && rendererEntry.tester(uischema, schema, testerContext) !== -1) {
       componentRenderer = rendererEntry.renderer;
     }
-    this.#root.innerHTML = '';
+    this.root.innerHTML = '';
     let componentElement;
     if (componentRenderer.tag) {
       componentElement = document.createElement(componentRenderer.tag);
@@ -181,13 +190,14 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
       componentElement = new componentRenderer();
     }
     if (componentElement instanceof JsonFormsDispatchRenderer) {
+      componentElement.jsonforms = this.jsonforms;
       componentElement.uischema = uischema;
       componentElement.schema = schema;
       componentElement.path = this.path;
     }
-    this.#root.appendChild(componentElement);
+    this.root.appendChild(componentElement);
   }
 
-  #refresh = debounce(this.#_refresh)
+  protected refresh = debounce(this._refresh);
 
 }

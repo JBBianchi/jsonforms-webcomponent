@@ -25,9 +25,11 @@ import {
   camelCase,
   debounce,
   isObject,
-  noop
+  noop,
+  shadowRootMode
 } from './common';
 import { JsonFormsDispatchRenderer } from './json-forms-dispatch-renderer';
+import { renderers } from './renderers/vanilla';
 
 const jsonFormsTag = 'json-forms';
 const changeEventName = 'change';
@@ -40,7 +42,7 @@ export class JsonForms
   implements IWebComponent
 {
   static get observedAttributes(): Array<string> {
-    // attributes naming convention = property as "kebab-case", except for events
+    // attributes naming convention = property as 'kebab-case', except for events
     // e.g.: `validationMode` property becomes `validation-mode` attribute
     return [
       /* required */
@@ -54,7 +56,7 @@ export class JsonForms
       'readonly',
       'uischemas',
       'validation-mode',
-      'ajv',
+      'ajv', // ajv options instead?
       'i18n',
       'additional-errors',
       /* events */
@@ -80,7 +82,7 @@ export class JsonForms
   #data: any;
   #schema: JsonSchema = null!; // todo: proper null values (or not) handling
   #uischema: UISchemaElement = null!; // todo: proper null values (or not) handling
-  #renderers: JsonFormsRendererRegistryEntry[] = []; // todo: proper null values (or not) handling
+  #renderers: JsonFormsRendererRegistryEntry[] = renderers; // todo: proper null values (or not) handling
   #cells: JsonFormsCellRendererRegistryEntry[] = null!; // todo: proper null values (or not) handling
   #uischemas: { tester: UISchemaTester; uischema: UISchemaElement; }[] = null!; // todo: proper null values (or not) handling
   #readonly: boolean = null!; // todo: proper null values (or not) handling
@@ -93,8 +95,8 @@ export class JsonForms
 
   constructor() {
     super();
-    this.#root = this.attachShadow({ mode: 'closed' }); // keeps track of the shadowRoot even if its closed
-    this.validationMode = "ValidateAndShow";
+    this.#root = this.attachShadow({ mode: shadowRootMode }); // keeps track of the shadowRoot even if its closed
+    this.validationMode = 'ValidateAndShow';
     this.cells = [];
     this.readonly = false;
     this.uischemas = [];

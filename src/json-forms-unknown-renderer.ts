@@ -1,4 +1,4 @@
-import { IWebComponent } from "./common";
+import { IWebComponent, shadowRootMode } from './common';
 
 const jsonFormsTag = 'json-forms-unknown-renderer';
 
@@ -18,8 +18,8 @@ export class JsonFormsUnknownRenderer
   
   constructor() {
     super();
-    this.#root = this.attachShadow({ mode: 'closed' });
-    this.#root.textContent = "No applicable renderer found!";
+    this.#root = this.attachShadow({ mode: shadowRootMode });
+    this.#root.textContent = 'No applicable renderer found!';
   }
 
   connectedCallback(): void {}
