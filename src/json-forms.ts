@@ -21,10 +21,12 @@ import {
   ChangeEventArgs,
   EventHandler,
   IWebComponent,
+  JsonFormsCoreChangEventArgs,
   KeyOfComponent,
   camelCase,
   debounce,
   isObject,
+  jsonFormsCoreChangeEventName,
   noop,
   shadowRootMode
 } from './common';
@@ -304,6 +306,7 @@ export class JsonForms
       return;
     }
     this.#initialize();
+    this.#render();
     this.#emitChange();
   }
 
@@ -325,6 +328,16 @@ export class JsonForms
     // if (!this.#renderers) {
     //   throw 'Renderers are required';
     // }
+    this.addEventListener(
+      jsonFormsCoreChangeEventName, 
+      ((evt: CustomEvent<JsonFormsCoreChangEventArgs>) => {
+        evt.stopPropagation();
+        this.#jsonforms.core = evt.detail.core;
+        this.#render();
+        this.#emitChange();
+      }) as EventListener, 
+      { capture: true }
+    );
     const data = this.#data;
     const schema = this.#schema ?? Generate.jsonSchema(isObject(data) ? data : {});
     const uischema = this.#uischema ?? Generate.uiSchema(schema);
@@ -368,9 +381,9 @@ export class JsonForms
     if (this.#uischemas !== this.#jsonforms.uischemas) {
       this.#jsonforms.uischemas = this.#uischemas;
     }
-    const data = this.#data;
-    const schema = this.#schema ?? Generate.jsonSchema(isObject(data) ? data : {});
-    const uischema = this.#uischema ?? Generate.uiSchema(schema);
+    const data = this.#jsonforms.core!.data;
+    const schema = this.#jsonforms.core!.schema;
+    const uischema = this.#jsonforms.core!.uischema;
     const initActionOptions: InitActionOptions = {
       ajv: this.#ajv,
       validationMode: this.#validationMode,
@@ -380,6 +393,9 @@ export class JsonForms
       this.#jsonforms.core,
       Actions.updateCore(data, schema, uischema, initActionOptions)
     );
+  }
+
+  #_render() {
     this.#root.innerHTML = '';
     const dispatchRendererElement = document.createElement(JsonFormsDispatchRenderer.tag) as JsonFormsDispatchRenderer;
     dispatchRendererElement.jsonforms = this.#jsonforms;
@@ -387,6 +403,7 @@ export class JsonForms
   }
 
   #refresh = debounce(this.#_refresh);
+  #render = debounce(this.#_render);
 
   #emitChange() {
     if (!this.#jsonforms.core) {

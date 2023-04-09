@@ -26,7 +26,7 @@ export class JsonFormsVerticalLayoutRenderer extends JsonFormsAbstractLayoutRend
 
 }
 
-export const verticalLayoutTester: RankedTester = rankWith(
+export const verticalLayoutRendererTester: RankedTester = rankWith(
   1,
   uiTypeIs('VerticalLayout')
 );

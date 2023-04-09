@@ -3,9 +3,18 @@
 
 <body>
     <json-forms
+      id="json-forms"
       data='{"foo":"bar","hello":"world"}'
       uischema='{"type":"VerticalLayout","elements":[{"type":"HorizontalLayout","elements":[{"type":"Control","scope":"#/properties/foo"},{"type":"Control","scope":"#/properties/hello"}]}]}'
     ></json-forms>
+
+    <pre id="output"></pre>
+    <script>
+      const jsonforms = document.getElementById('json-forms');
+      const output = document.getElementById('output');
+      jsonforms.onchange = (e) => output.textContent = JSON.stringify(e.detail);
+    </script>
+
 </body>
 
 </html>

@@ -1,3 +1,4 @@
+import { JsonFormsCore } from '@jsonforms/core';
 import { ErrorObject } from 'ajv';
 
 export interface IWebComponent {
@@ -29,6 +30,24 @@ export interface ChangeEventArgs {
   data?: any;
   errors: ErrorObject[] | undefined
 }
+
+export const jsonFormsCoreChangeEventName = 'json-forms-core-change';
+export interface JsonFormsCoreChangEventArgs {
+  core: JsonFormsCore
+}
+export const emitJsonFormsCoreChange = (target: any, core: JsonFormsCore) => {
+  target.dispatchEvent(
+    new CustomEvent<JsonFormsCoreChangEventArgs> (
+      jsonFormsCoreChangeEventName,
+      {
+        detail: { core },
+        bubbles: true,
+        cancelable: true, 
+        composed: true // outside the boundaries of a shadow root
+      }
+    )
+  );
+};
 
 export type KeyOfComponent<TComponent> = keyof Omit<TComponent, keyof HTMLElement>;
 

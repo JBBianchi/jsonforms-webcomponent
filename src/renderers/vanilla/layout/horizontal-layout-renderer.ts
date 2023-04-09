@@ -27,7 +27,7 @@ export class JsonFormsHorizontalLayoutRenderer extends JsonFormsAbstractLayoutRe
 
 }
 
-export const horizontalLayoutTester: RankedTester = rankWith(
+export const horizontalLayoutRendererTester: RankedTester = rankWith(
   1,
   uiTypeIs('HorizontalLayout')
 );
