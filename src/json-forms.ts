@@ -311,7 +311,6 @@ export class JsonForms
   onDataChange(evt: CustomEvent<JsonFormsCoreChangeEventArgs>) {
     evt.stopPropagation();
     this.#jsonforms.core = evt.detail.core;
-    this.#data = this.#jsonforms.core.data;
     this.#render();
     this.#emitChange();
   }

@@ -51,6 +51,7 @@ export class JsonFormTextControlRenderer extends JsonFormsAbstractControlRendere
 
   protected override _refresh() {
     super._refresh();
+    this.root.innerHTML = '';
     if (!this.rendererProperties.visible) {
       return;
     }
@@ -68,7 +69,6 @@ export class JsonFormTextControlRenderer extends JsonFormsAbstractControlRendere
     input.addEventListener('change', this.boundOnInputChange);
     this.input?.removeEventListener('change', this.boundOnInputChange);
     this.input = input; 
-    this.root.innerHTML = '';
     this.root.appendChild(input);
   }
 

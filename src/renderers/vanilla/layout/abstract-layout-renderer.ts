@@ -24,6 +24,7 @@ export abstract class JsonFormsAbstractLayoutRenderer<TLayout extends Layout = L
     }
     `;
   }
+  #childrenElements: JsonFormsDispatchRenderer[] = [];
 
   constructor() {
     super();
@@ -39,27 +40,40 @@ export abstract class JsonFormsAbstractLayoutRenderer<TLayout extends Layout = L
       schema: this.schema,
       path: this.path
     });
-    this.root.innerHTML = '';
     const styleElement = document.createElement('style');
     this.root.appendChild(styleElement);
     styleElement.textContent = this.styleContent;
-    const { visible, uischema, schema, path }: { visible: boolean, uischema: UISchemaElement, schema: JsonSchema,  path: string } = rendererProperties;
+    const { visible, enabled, uischema, schema, path }: { visible: boolean, enabled: boolean, uischema: UISchemaElement, schema: JsonSchema,  path: string } = rendererProperties;
     if (!visible) {
       return;
     }
-    const children = ((uischema as Layout).elements || []).map(element => ({
-      uischema: element,
+    const children = ((uischema as Layout).elements || []).map(uischema => ({
+      uischema,
       schema,
-      path
+      path,
+      visible,
+      enabled
     }));
-    for(let child of children) {
-      const dispatchRendererElement = document.createElement(JsonFormsDispatchRenderer.tag) as JsonFormsDispatchRenderer;
-      dispatchRendererElement.style.cssText = "flex: 1 1 0%;"
-      dispatchRendererElement.jsonforms = this.jsonforms;
-      dispatchRendererElement.uischema = child.uischema;
-      dispatchRendererElement.schema = child.schema;
-      dispatchRendererElement.path = child.path;
-      this.root.appendChild(dispatchRendererElement);
+    let isNew: boolean;
+    for(let i=0, c=children.length; i<c; i++) {
+      const child = children[i];
+      isNew = false;
+      let childRendererElement = (this.#childrenElements||[])[i];
+      if (!childRendererElement) {
+        childRendererElement = document.createElement(JsonFormsDispatchRenderer.tag) as JsonFormsDispatchRenderer;
+        isNew = true;
+      }
+      childRendererElement.style.cssText = "flex: 1 1 0%;"
+      childRendererElement.jsonforms = this.jsonforms;
+      childRendererElement.uischema = child.uischema;
+      childRendererElement.schema = child.schema;
+      childRendererElement.path = child.path;
+      childRendererElement.enabled = child.enabled;
+      childRendererElement.visible = child.visible;
+      if (isNew) {
+        this.root.appendChild(childRendererElement);
+        this.#childrenElements.push(childRendererElement);
+      }
     }
   }
 

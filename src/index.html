@@ -5,7 +5,7 @@
     <json-forms
       id="json-forms"
       data='{"foo":"bar","hello":"world"}'
-      uischema='{"type":"VerticalLayout","elements":[{"type":"HorizontalLayout","elements":[{"type":"Control","scope":"#/properties/foo"},{"type":"Control","scope":"#/properties/hello","rule":{"effect":"HIDE","condition":{"scope":"#/properties/foo","schema":{"minLength": 3}}}}]}]}'
+      uischema='{"type":"VerticalLayout","elements":[{"type":"HorizontalLayout","elements":[{"type":"Control","scope":"#/properties/foo"},{"type":"Control","scope":"#/properties/hello","rule":{"effect":"SHOW","condition":{"scope":"#/properties/foo","schema":{"minLength": 3}}}}]}]}'
     ></json-forms>
 
     <pre id="output"></pre>

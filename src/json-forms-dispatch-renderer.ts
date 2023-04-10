@@ -51,7 +51,7 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
       'uischema',
       'path',
       'enabled',
-      //'visible',
+      'visible',
       //'renderers',
       //'cells',
       //'config',
@@ -59,6 +59,8 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
   }
 
   protected root: ShadowRoot;
+  #rendererElement: HTMLElement = null!;
+
   #jsonforms: JsonFormsSubStates = null!; // todo: proper null values (or not) handling
   #rendererProperties: StatePropsOfJsonFormsRenderer = null!; // todo: proper null values (or not) handling
   #id: string = null!; // todo: proper null values (or not) handling
@@ -67,7 +69,7 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
   #uischema: TUISchemaElement = null!; // todo: proper null values (or not) handling
   #path: string = null!; // todo: proper null values (or not) handling
   #enabled: boolean = null!; // todo: proper null values (or not) handling
-  //#visible: boolean = null!; // todo: proper null values (or not) handling
+  #visible: boolean = null!; // todo: proper null values (or not) handling
   //#renderers: JsonFormsRendererRegistryEntry[] = null!; // todo: proper null values (or not) handling
   //#cells: JsonFormsCellRendererRegistryEntry[] = null!; // todo: proper null values (or not) handling
   //#config: any = null!; // todo: proper null values (or not) handling
@@ -117,6 +119,14 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
     this.refresh();
   }
 
+  get visible(): boolean {
+    return this.#visible;
+  }
+  set visible(visible: boolean) {
+    this.#visible = visible;
+    this.refresh();
+  }
+
   attributeChangedCallback(attribute: string, previousValue: unknown, currentValue: unknown): void {
     if (previousValue === currentValue) {
       return;
@@ -162,11 +172,6 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
         //cells: this.#cells
       }
     );
-    if (areEqual(this.#rendererProperties, rendererProperties)) {
-      return;
-    }
-    this.#rendererProperties = rendererProperties;
-    const { renderers } = rendererProperties;
     // if (!renderers?.length) {
     //   throw 'Renderers are required';
     // }
@@ -178,30 +183,41 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
     if (!uischema) {
       throw 'UISchema is required';
     }
+    if (areEqual(this.#rendererProperties, rendererProperties)) {
+      // just refresh the child renderer ?      
+      if (this.#rendererElement instanceof JsonFormsDispatchRenderer) {
+        this.#rendererElement.jsonforms = this.jsonforms;
+        this.#rendererElement.uischema = uischema;
+        this.#rendererElement.schema = schema;
+        this.#rendererElement.path = this.path;
+      }
+      return;
+    }
+    this.#rendererProperties = rendererProperties;
+    const { renderers } = rendererProperties;
     const testerContext = {
       rootSchema: rendererProperties.rootSchema,
       config: getConfig(state)
     };
     const rendererEntry = maxBy(renderers??[], renderer => renderer.tester(uischema, schema, testerContext));
-    let componentRenderer = JsonFormsUnknownRenderer;
+    let rendererComponent = JsonFormsUnknownRenderer;
     if (!!rendererEntry && rendererEntry.tester(uischema, schema, testerContext) !== -1) {
-      componentRenderer = rendererEntry.renderer;
+      rendererComponent = rendererEntry.renderer;
     }
     this.root.innerHTML = '';
-    let componentElement;
-    if (componentRenderer.tag) {
-      componentElement = document.createElement(componentRenderer.tag);
+    if (rendererComponent.tag) {
+      this.#rendererElement = document.createElement(rendererComponent.tag);
     }
     else {
-      componentElement = new componentRenderer();
+      this.#rendererElement = new rendererComponent();
     }
-    if (componentElement instanceof JsonFormsDispatchRenderer) {
-      componentElement.jsonforms = this.jsonforms;
-      componentElement.uischema = uischema;
-      componentElement.schema = schema;
-      componentElement.path = this.path;
+    if (this.#rendererElement instanceof JsonFormsDispatchRenderer) {
+      this.#rendererElement.jsonforms = this.jsonforms;
+      this.#rendererElement.uischema = uischema;
+      this.#rendererElement.schema = schema;
+      this.#rendererElement.path = this.path;
     }
-    this.root.appendChild(componentElement);
+    this.root.appendChild(this.#rendererElement);
   }
 
   protected refresh = debounce(this._refresh);
