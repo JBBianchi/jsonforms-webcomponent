@@ -24,14 +24,14 @@ export class JsonFormTextControlRenderer extends JsonFormsAbstractControlRendere
   }
 
   protected input: HTMLInputElement | undefined;
-  #boundOnInputChange: EventListener;
+  private boundOnInputChange: EventListener;
 
   constructor() {
     super();
-    this.#boundOnInputChange = this.onInputChange.bind(this); // binds the event listener to this component rather than the input emitting it
+    this.boundOnInputChange = this.onInputChange.bind(this); // binds the event listener to this component rather than the input emitting it
   }
 
-  onInputChange(evt: Event) {
+  private onInputChange(evt: Event) {
     emitJsonFormsCoreChange(
       this.root,
       coreReducer(
@@ -65,8 +65,8 @@ export class JsonFormTextControlRenderer extends JsonFormsAbstractControlRendere
       input.type = 'text';
     }
     input.value = !isObject(this.rendererProperties.data) ? this.rendererProperties.data : JSON.stringify(this.rendererProperties.data);
-    input.addEventListener('change', this.#boundOnInputChange);
-    this.input?.removeEventListener('change', this.#boundOnInputChange);
+    input.addEventListener('change', this.boundOnInputChange);
+    this.input?.removeEventListener('change', this.boundOnInputChange);
     this.input = input; 
     this.root.innerHTML = '';
     this.root.appendChild(input);

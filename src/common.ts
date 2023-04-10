@@ -32,12 +32,12 @@ export interface ChangeEventArgs {
 }
 
 export const jsonFormsCoreChangeEventName = 'json-forms-core-change';
-export interface JsonFormsCoreChangEventArgs {
+export interface JsonFormsCoreChangeEventArgs {
   core: JsonFormsCore
 }
 export const emitJsonFormsCoreChange = (target: any, core: JsonFormsCore) => {
   target.dispatchEvent(
-    new CustomEvent<JsonFormsCoreChangEventArgs> (
+    new CustomEvent<JsonFormsCoreChangeEventArgs> (
       jsonFormsCoreChangeEventName,
       {
         detail: { core },

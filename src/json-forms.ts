@@ -21,7 +21,7 @@ import {
   ChangeEventArgs,
   EventHandler,
   IWebComponent,
-  JsonFormsCoreChangEventArgs,
+  JsonFormsCoreChangeEventArgs,
   KeyOfComponent,
   camelCase,
   debounce,
@@ -80,6 +80,7 @@ export class JsonForms
 
   #root: ShadowRoot;
   #jsonforms: JsonFormsSubStates = null!; // todo: proper null values (or not) handling  
+  #rendererElement: JsonFormsDispatchRenderer = null!;
 
   #data: any;
   #schema: JsonSchema = null!; // todo: proper null values (or not) handling
@@ -98,6 +99,9 @@ export class JsonForms
   constructor() {
     super();
     this.#root = this.attachShadow({ mode: shadowRootMode }); // keeps track of the shadowRoot even if its closed
+    this.#rendererElement = document.createElement(JsonFormsDispatchRenderer.tag) as JsonFormsDispatchRenderer;
+    this.#root.appendChild(this.#rendererElement);
+    this.addEventListener(jsonFormsCoreChangeEventName, this.onDataChange as EventListener);
     this.validationMode = 'ValidateAndShow';
     this.cells = [];
     this.readonly = false;
@@ -278,27 +282,12 @@ export class JsonForms
     }
     const property = camelCase(attribute) as KeyOfComponent<JsonForms>;
     if (typeof currentValue === 'string') {
-      currentValue = JSON.parse(currentValue);
+      try {
+        currentValue = JSON.parse(currentValue);
+      }
+      catch {}
     }
     this[property] = currentValue;
-
-    /*switch (attribute) {
-      case 'change': return this.#bindChangeListener(currentValue);
-      case 'data': return this.data = currentValue;
-      case 'renderers': return this.renderers = currentValue;
-      case 'schema': return this.schema = currentValue;
-      case 'uischema': return this.uischema = currentValue;
-      case 'cells': return this.cells = currentValue;
-      case 'config': return this.config = currentValue;
-      case 'readonly': return this.readonly = currentValue;
-      case 'uischemas': return this.uischemas = currentValue;
-      case 'validation-mode': return this.validationMode = currentValue;
-      case 'ajv': return this.ajv = currentValue;
-      case 'i18n': return this.i18n = currentValue;
-      case 'additional-errors': return this.additionalErrors = currentValue;
-      default:
-        console.error(`Unknown attribute '${attribute}' for JsonForms`);
-    }*/
   }
 
   connectedCallback(): void {
@@ -311,12 +300,21 @@ export class JsonForms
   }
 
   disconnectedCallback(): void {
+    this.removeEventListener(jsonFormsCoreChangeEventName, this.onDataChange as EventListener);
     if (this.onChange != null && this.onChange !== noop) {
       this.removeEventListener(changeEventName, this.onChange as EventListener);
     }
   }
 
   adoptedCallback(): void {}
+
+  onDataChange(evt: CustomEvent<JsonFormsCoreChangeEventArgs>) {
+    evt.stopPropagation();
+    this.#jsonforms.core = evt.detail.core;
+    this.#data = this.#jsonforms.core.data;
+    this.#render();
+    this.#emitChange();
+  }
 
   #initialize() {
     if (!!this.#jsonforms) {
@@ -328,16 +326,6 @@ export class JsonForms
     // if (!this.#renderers) {
     //   throw 'Renderers are required';
     // }
-    this.addEventListener(
-      jsonFormsCoreChangeEventName, 
-      ((evt: CustomEvent<JsonFormsCoreChangEventArgs>) => {
-        evt.stopPropagation();
-        this.#jsonforms.core = evt.detail.core;
-        this.#render();
-        this.#emitChange();
-      }) as EventListener, 
-      { capture: true }
-    );
     const data = this.#data;
     const schema = this.#schema ?? Generate.jsonSchema(isObject(data) ? data : {});
     const uischema = this.#uischema ?? Generate.uiSchema(schema);
@@ -381,9 +369,9 @@ export class JsonForms
     if (this.#uischemas !== this.#jsonforms.uischemas) {
       this.#jsonforms.uischemas = this.#uischemas;
     }
-    const data = this.#jsonforms.core!.data;
-    const schema = this.#jsonforms.core!.schema;
-    const uischema = this.#jsonforms.core!.uischema;
+    const data = this.#data;
+    const schema = this.#schema ?? Generate.jsonSchema(isObject(data) ? data : {});
+    const uischema = this.#uischema ?? Generate.uiSchema(schema);
     const initActionOptions: InitActionOptions = {
       ajv: this.#ajv,
       validationMode: this.#validationMode,
@@ -396,10 +384,7 @@ export class JsonForms
   }
 
   #_render() {
-    this.#root.innerHTML = '';
-    const dispatchRendererElement = document.createElement(JsonFormsDispatchRenderer.tag) as JsonFormsDispatchRenderer;
-    dispatchRendererElement.jsonforms = this.#jsonforms;
-    this.#root.appendChild(dispatchRendererElement);
+    this.#rendererElement.jsonforms = this.#jsonforms;
   }
 
   #refresh = debounce(this.#_refresh);

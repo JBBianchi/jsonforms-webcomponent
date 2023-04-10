@@ -10,10 +10,15 @@ import {
   removeId
 } from '@jsonforms/core';
 import {
-  IWebComponent, KeyOfComponent, camelCase, debounce, isEqual, maxBy, shadowRootMode
+  IWebComponent,
+  KeyOfComponent,
+  camelCase,
+  debounce,
+  isEqual,
+  maxBy,
+  shadowRootMode
 } from './common';
 import { JsonFormsUnknownRenderer } from './json-forms-unknown-renderer';
-
 
 const areEqual = (prevProps: StatePropsOfJsonFormsRenderer | null | undefined, nextProps: StatePropsOfJsonFormsRenderer | null | undefined) => {
   return prevProps?.renderers?.length === nextProps?.renderers?.length
@@ -77,6 +82,7 @@ export class JsonFormsDispatchRenderer<TUISchemaElement extends UISchemaElement 
   }
   set jsonforms(jsonforms: JsonFormsSubStates) {
     this.#jsonforms = jsonforms;
+    this.refresh();
   }
 
   get schema(): JsonSchema {
